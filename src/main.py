@@ -75,16 +75,22 @@ def analyze_words(to_analyze, messages, output):
         .apply(set_none_to([]))
     )
     words["text"] = words["text"].apply(set_none_to(""))
+    words["total"] = 1
 
     value_output = make_suboutput(output, "words")
     for word, analysis_type in to_analyze.items():
         analyze_word(words, word, analysis_type, value_output)
 
-    words_by_week = sum_by_month(words.drop(['text', 'from_alex', 'from_andy'], axis=1))
+    non_word_cols = ['text', 'from_alex', 'from_andy', 'list']
+    words_by_week = sum_by_month(words.drop(non_word_cols, axis='columns'))
+    words_by_week = words_by_week.divide(words_by_week["total"], axis='rows')
+    words_by_week = words_by_week.drop('total', axis='columns')
 
     output_file(output, words_by_week, "words_by_week")
 
-    words_by_week.plot(kind="line")
+    axes = words_by_week.plot(kind="line")
+    axes.set_ylabel("Occurences per message")
+    axes.set_xlabel("Weeks")
 
 def analyze_word(words, word, analysis_type, output):
     output = get_suboutput(output, word)
